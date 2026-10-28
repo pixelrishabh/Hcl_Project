@@ -267,10 +267,12 @@ export const App: React.FC = () => {
 
       {/* 3. Main SCADA Dashboard Layout */}
       <main className="flex-1 container max-w-7xl mx-auto p-4 sm:p-6 space-y-4">
-        {/* Top: 3 Critical Real-Time Sensor Telemetry Cards */}
+        {/* Top: 4 Critical Real-Time Sensor Telemetry & Health Cards */}
         <SensorMetricsGrid
           reading={latestReading}
           previousReading={previousReading}
+          history={history}
+          mode={currentMode}
         />
 
         {/* Center: Fault Simulator Controller */}

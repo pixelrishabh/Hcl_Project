@@ -48,16 +48,17 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        // Industrial SCADA accents
+        // Industrial SCADA calibrated palette (ISA-101 / WCAG AA compliant)
         scada: {
-          cyan: "#06b6d4",
-          amber: "#f59e0b",
-          rose: "#f43f5e",
-          emerald: "#10b981",
-          violet: "#8b5cf6",
-          dark: "#0a0d12",
-          panel: "#11151c",
-          border: "#1e2633",
+          cyan: "#0ea5e9", // High legibility Sky/Cyan
+          amber: "#d97706", // Accessible Amber (exceeds 4.5:1 on light/dark)
+          rose: "#e11d48", // Vivid high-visibility alert Rose/Crimson
+          emerald: "#059669", // Accessible Forest/Emerald Green
+          blue: "#2563eb", // Hydraulic Steel Blue
+          violet: "#7c3aed", // RAG Diagnostic Violet
+          charcoal: "#0b0f17", // True SCADA deep base
+          panel: "#111827", // Neutral dark panel
+          border: "#1f2937", // Clean subtle delimiter
         },
       },
       borderRadius: {

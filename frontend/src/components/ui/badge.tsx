@@ -15,13 +15,13 @@ const badgeVariants = cva(
           "border-transparent bg-destructive text-destructive-foreground shadow hover:bg-destructive/80",
         outline: "text-foreground",
         success:
-          "border-emerald-500/30 bg-emerald-500/10 text-emerald-400 font-mono",
+          "border-emerald-600/30 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-mono",
         warning:
-          "border-amber-500/30 bg-amber-500/10 text-amber-400 font-mono",
+          "border-amber-600/30 bg-amber-500/15 text-amber-800 dark:text-amber-300 font-mono",
         critical:
-          "border-rose-500/30 bg-rose-500/10 text-rose-400 font-mono animate-pulse",
+          "border-rose-600/30 bg-rose-500/15 text-rose-800 dark:text-rose-300 font-mono font-bold",
         scada:
-          "border-scada-cyan/30 bg-scada-cyan/10 text-scada-cyan font-mono",
+          "border-sky-600/30 bg-sky-500/15 text-sky-800 dark:text-sky-300 font-mono",
       },
     },
     defaultVariants: {
