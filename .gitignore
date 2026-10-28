@@ -34,3 +34,5 @@ data/*.csv
 Thumbs.db
 *.tmp
 .env
+node_modules/
+*.tsbuildinfo
