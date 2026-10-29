@@ -481,10 +481,15 @@ def get_database_stats() -> Dict[str, Any]:
     if not is_database_available():
         return {
             "connected": False,
+            "available": False,
+            "status": "offline",
+            "host": f"{POSTGRES_HOST}:{POSTGRES_PORT}",
+            "user": POSTGRES_USER,
             "database": POSTGRES_DB,
             "telemetry_count": 0,
             "sensor_readings_count": 0,
             "incidents_count": 0,
+            "diagnoses_count": 0,
             "retention_days": TELEMETRY_RETENTION_DAYS,
         }
     try:
@@ -496,10 +501,15 @@ def get_database_stats() -> Dict[str, Any]:
                 f_count = cur.fetchone()["c"]
                 return {
                     "connected": True,
+                    "available": True,
+                    "status": "connected",
+                    "host": f"{POSTGRES_HOST}:{POSTGRES_PORT}",
+                    "user": POSTGRES_USER,
                     "database": POSTGRES_DB,
                     "telemetry_count": s_count,
                     "sensor_readings_count": s_count,
                     "incidents_count": f_count,
+                    "diagnoses_count": f_count,
                     "retention_days": TELEMETRY_RETENTION_DAYS,
                     "pruning_interval": "1 hour",
                 }
@@ -507,10 +517,15 @@ def get_database_stats() -> Dict[str, Any]:
         logger.warning(f"Error fetching DB stats: {e}")
         return {
             "connected": False,
+            "available": False,
+            "status": "error",
+            "host": f"{POSTGRES_HOST}:{POSTGRES_PORT}",
+            "user": POSTGRES_USER,
             "database": POSTGRES_DB,
             "telemetry_count": 0,
             "sensor_readings_count": 0,
             "incidents_count": 0,
+            "diagnoses_count": 0,
             "retention_days": TELEMETRY_RETENTION_DAYS,
             "error": str(e),
         }

@@ -14,8 +14,16 @@ _PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(_PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(_PROJECT_ROOT))
 
-import psycopg
-from psycopg import sql
+try:
+    import psycopg
+    from psycopg import sql
+except ImportError:
+    try:
+        import psycopg2 as psycopg
+        from psycopg2 import sql
+    except ImportError:
+        psycopg = None
+        sql = None
 
 from config import (
     POSTGRES_DB,
@@ -36,6 +44,10 @@ logger = logging.getLogger("DBInit")
 
 def initialize_database() -> bool:
     """Create database and apply schema."""
+    if psycopg is None:
+        logger.error("No PostgreSQL driver found. Please install psycopg or psycopg2-binary.")
+        return False
+
     logger.info(f"Connecting to PostgreSQL at {POSTGRES_HOST}:{POSTGRES_PORT} as user '{POSTGRES_USER}'...")
 
     # 1. Connect to maintenance DB (postgres) with autocommit=True to check/create target database
@@ -46,9 +58,10 @@ def initialize_database() -> bool:
             user=POSTGRES_USER,
             password=POSTGRES_PASSWORD,
             dbname="postgres",
-            autocommit=True,
             connect_timeout=5,
         )
+        if hasattr(conn, "autocommit"):
+            conn.autocommit = True
         with conn.cursor() as cur:
             cur.execute("SELECT 1 FROM pg_database WHERE datname = %s;", (POSTGRES_DB,))
             exists = cur.fetchone()
@@ -77,9 +90,10 @@ def initialize_database() -> bool:
             user=POSTGRES_USER,
             password=POSTGRES_PASSWORD,
             dbname=POSTGRES_DB,
-            autocommit=True,
             connect_timeout=5,
         )
+        if hasattr(conn, "autocommit"):
+            conn.autocommit = True
         with conn.cursor() as cur:
             logger.info("Applying db/init.sql schema...")
             cur.execute(schema_sql)

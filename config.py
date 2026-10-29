@@ -153,7 +153,7 @@ LLM_REQUEST_TIMEOUT_SECONDS: float = 45.0
 # ==============================================================================
 POSTGRES_DB: str = os.getenv("POSTGRES_DB", "iot_fault_diagnosis")
 POSTGRES_USER: str = os.getenv("POSTGRES_USER", "postgres")
-POSTGRES_PASSWORD: str = os.getenv("POSTGRES_PASSWORD", "")
+POSTGRES_PASSWORD: str = os.getenv("POSTGRES_PASSWORD", "postgres")
 POSTGRES_HOST: str = os.getenv("POSTGRES_HOST", "127.0.0.1")
 POSTGRES_PORT: int = int(os.getenv("POSTGRES_PORT", "5432"))
 
