@@ -4,29 +4,36 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+  "inline-flex items-center justify-center whitespace-nowrap rounded-[4px] text-xs font-mono font-medium border transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent disabled:pointer-events-none disabled:opacity-40 select-none",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm",
+        default:
+          "border-border bg-raised text-text hover:bg-surface active:bg-bg",
         destructive:
-          "bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-sm",
+          "border-crit/50 bg-crit/15 text-crit hover:bg-crit/25",
         outline:
-          "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
+          "border-border bg-surface text-text hover:bg-raised active:bg-bg",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        ghost: "hover:bg-accent hover:text-accent-foreground",
-        link: "text-primary underline-offset-4 hover:underline",
-        subtle: "bg-muted text-muted-foreground hover:bg-muted/80",
-        scada: "border border-scada-border bg-scada-panel hover:bg-scada-border text-foreground transition-all",
-        activeFault: "border-rose-500 bg-rose-950/40 text-rose-300 ring-1 ring-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.3)]",
-        activeNormal: "border-emerald-500 bg-emerald-950/40 text-emerald-300 ring-1 ring-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.3)]",
+          "border-border bg-surface text-muted hover:text-text hover:bg-raised",
+        ghost:
+          "border-transparent bg-transparent text-muted hover:text-text hover:bg-surface",
+        link:
+          "border-transparent text-accent underline-offset-4 hover:underline p-0 h-auto",
+        activeFault:
+          "border-crit bg-crit/20 text-crit font-semibold",
+        activeNormal:
+          "border-border bg-raised text-text font-semibold",
+        activeWarn:
+          "border-warn bg-warn/20 text-warn font-semibold",
+        activeSensorFault:
+          "border-sensor-fault bg-sensor-fault/20 text-sensor-fault font-semibold",
       },
       size: {
-        default: "h-9 px-4 py-2",
-        sm: "h-8 rounded-md px-3 text-xs",
-        lg: "h-10 rounded-md px-8 text-base",
-        icon: "h-9 w-9",
+        default: "h-8 px-3 py-1.5",
+        sm: "h-7 px-2.5 text-xs",
+        lg: "h-9 px-4 text-sm",
+        icon: "h-8 w-8",
       },
     },
     defaultVariants: {

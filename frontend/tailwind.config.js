@@ -1,4 +1,13 @@
 /** @type {import('tailwindcss').Config} */
+function withOpacity(variableName) {
+  return ({ opacityValue }) => {
+    if (opacityValue !== undefined) {
+      return `rgba(var(${variableName}-rgb), ${opacityValue})`
+    }
+    return `var(${variableName})`
+  }
+}
+
 export default {
   darkMode: ["class"],
   content: [
@@ -8,90 +17,63 @@ export default {
   theme: {
     container: {
       center: true,
-      padding: "2rem",
+      padding: "1.5rem",
       screens: {
         "2xl": "1400px",
       },
     },
     extend: {
       colors: {
-        border: "hsl(var(--border))",
-        input: "hsl(var(--input))",
-        ring: "hsl(var(--ring))",
-        background: "hsl(var(--background))",
-        foreground: "hsl(var(--foreground))",
-        primary: {
-          DEFAULT: "hsl(var(--primary))",
-          foreground: "hsl(var(--primary-foreground))",
-        },
-        secondary: {
-          DEFAULT: "hsl(var(--secondary))",
-          foreground: "hsl(var(--secondary-foreground))",
-        },
-        destructive: {
-          DEFAULT: "hsl(var(--destructive))",
-          foreground: "hsl(var(--destructive-foreground))",
-        },
-        muted: {
-          DEFAULT: "hsl(var(--muted))",
-          foreground: "hsl(var(--muted-foreground))",
-        },
-        accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
+        // ISA-101 semantic tokens
+        bg: withOpacity("--bg"),
+        surface: withOpacity("--surface"),
+        raised: withOpacity("--raised"),
+        border: withOpacity("--border"),
+        text: withOpacity("--text"),
+        muted: withOpacity("--muted"),
+        accent: withOpacity("--accent"),
+        "series-temp": withOpacity("--series-temp"),
+        "series-vib": withOpacity("--series-vib"),
+        "series-press": withOpacity("--series-press"),
+        warn: withOpacity("--warn"),
+        crit: withOpacity("--crit"),
+        "sensor-fault": withOpacity("--sensor-fault"),
+
+        // Shadcn UI compatibility mappings
+        background: "var(--bg)",
+        foreground: "var(--text)",
+        input: "var(--border)",
+        ring: "var(--accent)",
+        card: {
+          DEFAULT: "var(--surface)",
+          foreground: "var(--text)",
         },
         popover: {
-          DEFAULT: "hsl(var(--popover))",
-          foreground: "hsl(var(--popover-foreground))",
+          DEFAULT: "var(--raised)",
+          foreground: "var(--text)",
         },
-        card: {
-          DEFAULT: "hsl(var(--card))",
-          foreground: "hsl(var(--card-foreground))",
+        primary: {
+          DEFAULT: "var(--accent)",
+          foreground: "var(--bg)",
         },
-        // Industrial SCADA calibrated palette (ISA-101 / WCAG AA compliant)
-        scada: {
-          cyan: "#0ea5e9", // High legibility Sky/Cyan
-          amber: "#d97706", // Accessible Amber (exceeds 4.5:1 on light/dark)
-          rose: "#e11d48", // Vivid high-visibility alert Rose/Crimson
-          emerald: "#059669", // Accessible Forest/Emerald Green
-          blue: "#2563eb", // Hydraulic Steel Blue
-          violet: "#7c3aed", // RAG Diagnostic Violet
-          charcoal: "#0b0f17", // True SCADA deep base
-          panel: "#111827", // Neutral dark panel
-          border: "#1f2937", // Clean subtle delimiter
+        secondary: {
+          DEFAULT: "var(--surface)",
+          foreground: "var(--text)",
+        },
+        destructive: {
+          DEFAULT: "var(--crit)",
+          foreground: "var(--text)",
         },
       },
       borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        DEFAULT: "4px",
+        sm: "3px",
+        md: "4px",
+        lg: "6px",
       },
       fontFamily: {
         mono: ['"IBM Plex Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
-        sans: ['"Inter"', '"IBM Plex Sans"', 'system-ui', 'sans-serif'],
-      },
-      keyframes: {
-        "accordion-down": {
-          from: { height: "0" },
-          to: { height: "var(--radix-accordion-content-height)" },
-        },
-        "accordion-up": {
-          from: { height: "var(--radix-accordion-content-height)" },
-          to: { height: "0" },
-        },
-        pulseGlow: {
-          "0%, 100%": { opacity: "1", transform: "scale(1)" },
-          "50%": { opacity: "0.4", transform: "scale(0.95)" },
-        },
-        scanline: {
-          "0%": { transform: "translateY(-100%)" },
-          "100%": { transform: "translateY(1000%)" },
-        },
-      },
-      animation: {
-        "accordion-down": "accordion-down 0.2s ease-out",
-        "accordion-up": "accordion-up 0.2s ease-out",
-        "pulse-glow": "pulseGlow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+        sans: ['"IBM Plex Sans"', '"Inter"', 'system-ui', 'sans-serif'],
       },
     },
   },

@@ -1,5 +1,5 @@
 import React from "react"
-import { AlertCircle, CheckCircle2, RefreshCw, Database, Server } from "lucide-react"
+import { CheckCircle2, AlertTriangle, RefreshCw, Database } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 interface ConnectionBannerProps {
@@ -15,27 +15,27 @@ export const ConnectionBanner: React.FC<ConnectionBannerProps> = ({
 }) => {
   return (
     <div
-      className={`w-full border-b px-4 py-2 text-xs transition-colors ${
+      className={`w-full border-b px-4 py-1.5 text-xs font-mono transition-colors ${
         isLive
-          ? "border-emerald-500/20 bg-emerald-500/5 text-emerald-300"
-          : "border-amber-500/20 bg-amber-500/5 text-amber-300"
+          ? "border-border bg-surface text-muted"
+          : "border-warn/30 bg-warn/10 text-text"
       }`}
     >
       <div className="container max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
         <div className="flex items-center gap-2 text-center sm:text-left">
           {isLive ? (
-            <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
+            <CheckCircle2 className="h-3.5 w-3.5 text-muted shrink-0" />
           ) : (
-            <AlertCircle className="h-4 w-4 text-amber-400 shrink-0 animate-bounce" />
+            <AlertTriangle className="h-3.5 w-3.5 text-warn shrink-0" />
           )}
           <span>
             {isLive ? (
-              <span className="font-mono">
-                <strong className="text-emerald-400">Live Telemetry Pipeline Active:</strong> MQTT Broker (:1883) &middot; PostgreSQL (:5432) &middot; 1 Hz Continuous Ingestion
+              <span>
+                <strong className="text-text">Telemetry Pipeline Online:</strong> MQTT Broker (:1883) &middot; PostgreSQL Ingestion (:5432) &middot; 1 Hz Ingestion
               </span>
             ) : (
-              <span className="font-mono">
-                <strong className="text-amber-400">Standalone Interactive Mode:</strong> High-Fidelity Physics Simulator &amp; UCI AI4I Dataset Active. (Run <code>Launch_Dashboard.bat</code> for live pipeline)
+              <span>
+                <strong className="text-warn">Standalone Physics Simulator:</strong> High-Fidelity Pump Dynamic Model &amp; UCI AI4I Synthetic Generator Active.
               </span>
             )}
           </span>
@@ -46,17 +46,17 @@ export const ConnectionBanner: React.FC<ConnectionBannerProps> = ({
             variant="ghost"
             size="sm"
             onClick={onOpenDataset}
-            className="h-7 text-xs px-2.5 font-mono text-foreground hover:bg-background/80 gap-1.5"
+            className="h-6 text-xs px-2 font-mono text-muted hover:text-text hover:bg-raised gap-1"
           >
-            <Database className="h-3.5 w-3.5 text-scada-cyan" />
-            <span>Dataset &amp; DB Explorer</span>
+            <Database className="h-3 w-3 text-muted" />
+            <span>Dataset &amp; Persistence Explorer</span>
           </Button>
 
           <Button
             variant="outline"
             size="sm"
             onClick={onReconnect}
-            className="h-7 text-xs px-2.5 font-mono bg-background/50 hover:bg-background gap-1.5"
+            className="h-6 text-xs px-2 font-mono border-border bg-raised hover:bg-surface text-text gap-1"
           >
             <RefreshCw className="h-3 w-3" />
             <span>{isLive ? "Refresh Sync" : "Connect Live"}</span>

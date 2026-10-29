@@ -34,7 +34,7 @@ export async function fetchReadings(limit: number = 60): Promise<SensorReading[]
   return res.json()
 }
 
-export async function postMode(mode: string, submode: string = "flatline"): Promise<any> {
+export async function postMode(mode: string, submode: string = "flatline"): Promise<{ status: string; mode: string; submode: string }> {
   const res = await fetch(`${API_BASE}/api/mode`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -64,7 +64,7 @@ export class StandalonePhysicsSimulator {
     return { mode: this.mode, submode: this.submode }
   }
 
-  step(): { reading: SensorReading; detection?: any } {
+  step(): { reading: SensorReading; detection?: { has_fault: boolean; fault_category: string; symptoms: string[]; query: string } } {
     this.stepCount++
     const now = new Date()
     const timestamp = now.toISOString().replace("T", " ").substring(0, 19)
@@ -73,7 +73,7 @@ export class StandalonePhysicsSimulator {
     let vib = this.lastVib
     let press = this.lastPress
     let faultCategory = "normal"
-    let symptoms: string[] = []
+    const symptoms: string[] = []
 
     const jitter = (range: number) => (Math.random() - 0.5) * range
 
@@ -89,7 +89,11 @@ export class StandalonePhysicsSimulator {
         temp = Math.min(74.0, 55.0 + this.stepCount * 0.35 + jitter(0.5))
         press = 4.4 + jitter(0.1)
         faultCategory = "bearing_wear"
-        if (vib > 4.5) symptoms.push(`High vibration RMS ${vib.toFixed(2)} mm/s exceeding ISO 10816 Zone C/D threshold`)
+        if (vib > 4.5) {
+          symptoms.push(
+            `High vibration velocity RMS ${vib.toFixed(2)} mm/s entering ISO 20816-3 (formerly ISO 10816-3) Zone C alert band (4.5-7.1 mm/s)`
+          )
+        }
         if (temp > 65) symptoms.push(`Bearing housing temperature elevated at ${temp.toFixed(1)} °C`)
         break
 
@@ -98,7 +102,7 @@ export class StandalonePhysicsSimulator {
         vib = 1.6 + jitter(0.2)
         press = 4.3 + jitter(0.1)
         faultCategory = "overheating"
-        if (temp > 75.0) symptoms.push(`Stator core temperature critical at ${temp.toFixed(1)} °C (> 75.0 °C threshold)`)
+        if (temp > 75.0) symptoms.push(`Stator core temperature critical at ${temp.toFixed(1)} °C (> 75.0 °C trip limit)`)
         break
 
       case "pressure_drop":
@@ -106,7 +110,7 @@ export class StandalonePhysicsSimulator {
         temp = 56.0 + jitter(0.5)
         vib = 2.1 + (press < 3.0 ? jitter(0.6) : jitter(0.2))
         faultCategory = "pressure_drop"
-        if (press < 3.0) symptoms.push(`Discharge pressure critically dropped to ${press.toFixed(2)} bar (< 3.0 bar limit)`)
+        if (press < 3.0) symptoms.push(`Discharge pressure critically dropped to ${press.toFixed(2)} bar (< 3.0 bar cavitation limit)`)
         break
 
       case "sensor_failure":
@@ -141,7 +145,7 @@ export class StandalonePhysicsSimulator {
       fault_status: faultCategory,
     }
 
-    let detection = null
+    let detection = undefined
     if (faultCategory !== "normal" && symptoms.length > 0) {
       detection = {
         has_fault: true,

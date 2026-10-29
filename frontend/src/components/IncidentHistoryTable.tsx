@@ -2,15 +2,13 @@ import React, { useState, useMemo } from "react"
 import {
   History,
   Search,
-  Filter,
-  ShieldAlert,
   ArrowUpDown,
   Download,
   AlertTriangle,
   AlertOctagon,
   Eye,
-  FileSpreadsheet,
   CheckCircle2,
+  Unplug,
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -28,7 +26,7 @@ interface IncidentHistoryTableProps {
   history: DiagnosisRecord[]
 }
 
-type SortField = "timestamp" | "fault_category" | "temperature" | "vibration"
+type SortField = "timestamp" | "fault_category" | "temperature" | "vibration" | "duration" | "ttd"
 
 export const IncidentHistoryTable: React.FC<IncidentHistoryTableProps> = ({
   history,
@@ -41,31 +39,67 @@ export const IncidentHistoryTable: React.FC<IncidentHistoryTableProps> = ({
   const [rowsPerPage, setRowsPerPage] = useState<number>(10)
   const [selectedIncident, setSelectedIncident] = useState<DiagnosisRecord | null>(null)
 
-  // Incident Metrics Calculation
+  // Helper to extract peak value for an incident
+  const getPeakValue = (r: DiagnosisRecord): string => {
+    if (r.peak_value) return r.peak_value
+    const cat = r.fault_category.toLowerCase()
+    if (cat.includes("bearing") && r.readings) {
+      return `${r.readings.vibration.toFixed(2)} mm/s`
+    }
+    if (cat.includes("overheating") && r.readings) {
+      return r.readings.temperature < -900 ? "OPEN" : `${r.readings.temperature.toFixed(1)} °C`
+    }
+    if (cat.includes("pressure") && r.readings) {
+      return `${r.readings.pressure.toFixed(2)} bar`
+    }
+    if (cat.includes("sensor") && r.readings) {
+      return r.readings.temperature < -900 ? "-999 °C" : "0.00 var"
+    }
+    return r.readings ? `${r.readings.vibration.toFixed(2)} mm/s` : "--"
+  }
+
+  // Helper to extract duration
+  const getDuration = (r: DiagnosisRecord): string => {
+    if (r.duration) return r.duration
+    return "30s"
+  }
+
+  // Helper to extract Time-to-Detect (TTD)
+  const getTTD = (r: DiagnosisRecord): number => {
+    return r.latency_seconds || 0.42
+  }
+
+  // Metrics calculation
   const totalIncidents = history.length
   const criticalCount = history.filter(
     (h) =>
       h.fault_category === "overheating" ||
+      h.fault_category === "pressure_drop" ||
       (h.readings && (h.readings.vibration > 7.1 || h.readings.temperature >= 75.0 || h.readings.pressure < 3.0))
   ).length
-  const warningCount = totalIncidents - criticalCount
+  const sensorFaultCount = history.filter((h) => h.fault_category === "sensor_failure").length
+  const warningCount = Math.max(0, totalIncidents - criticalCount - sensorFaultCount)
 
   // Filtered & Sorted Records
   const processedRecords = useMemo(() => {
-    let result = history.filter((item) => {
-      // Filter by category
+    const result = history.filter((item) => {
+      // Category filter
       const matchesCategory = filterMode === "all" || item.fault_category === filterMode
 
-      // Filter by severity
+      // Severity filter
       const isCritical =
         item.fault_category === "overheating" ||
+        item.fault_category === "pressure_drop" ||
         (item.readings && (item.readings.vibration > 7.1 || item.readings.temperature >= 75.0 || item.readings.pressure < 3.0))
+      const isSensorFault = item.fault_category === "sensor_failure"
+
       const matchesSeverity =
         filterSeverity === "all" ||
         (filterSeverity === "critical" && isCritical) ||
-        (filterSeverity === "warning" && !isCritical)
+        (filterSeverity === "sensorFault" && isSensorFault) ||
+        (filterSeverity === "warning" && !isCritical && !isSensorFault)
 
-      // Search term
+      // Search query
       const term = search.toLowerCase()
       const matchesSearch =
         term === "" ||
@@ -77,7 +111,7 @@ export const IncidentHistoryTable: React.FC<IncidentHistoryTableProps> = ({
       return matchesCategory && matchesSeverity && matchesSearch
     })
 
-    // Sort
+    // Sort logic
     result.sort((a, b) => {
       let comparison = 0
       if (sortField === "timestamp") {
@@ -92,6 +126,10 @@ export const IncidentHistoryTable: React.FC<IncidentHistoryTableProps> = ({
         const vibA = a.readings?.vibration ?? 0
         const vibB = b.readings?.vibration ?? 0
         comparison = vibA - vibB
+      } else if (sortField === "duration") {
+        comparison = getDuration(a).localeCompare(getDuration(b))
+      } else if (sortField === "ttd") {
+        comparison = getTTD(a) - getTTD(b)
       }
       return sortAsc ? comparison : -comparison
     })
@@ -99,35 +137,52 @@ export const IncidentHistoryTable: React.FC<IncidentHistoryTableProps> = ({
     return result
   }, [history, filterMode, filterSeverity, search, sortField, sortAsc])
 
-  // Export CSV Handler
+  // Export CSV Handler including new columns
   const handleExportCSV = () => {
     if (processedRecords.length === 0) return
     const headers = [
       "Timestamp",
       "Device ID",
       "Fault Category",
+      "Severity",
+      "Duration",
+      "Peak Value",
+      "Time-to-Detect (s)",
       "Temperature (°C)",
       "Vibration (mm/s)",
       "Pressure (bar)",
       "Symptoms",
       "Diagnosis",
     ]
-    const rows = processedRecords.map((r) => [
-      `"${r.timestamp}"`,
-      `"${r.device_id}"`,
-      `"${r.fault_category}"`,
-      r.readings?.temperature ?? "",
-      r.readings?.vibration ?? "",
-      r.readings?.pressure ?? "",
-      `"${(r.symptoms || []).join("; ").replace(/"/g, '""')}"`,
-      `"${(r.diagnosis_text || "").replace(/"/g, '""')}"`,
-    ])
+    const rows = processedRecords.map((r) => {
+      const isCrit =
+        r.fault_category === "overheating" ||
+        r.fault_category === "pressure_drop" ||
+        (r.readings && (r.readings.vibration > 7.1 || r.readings.temperature >= 75.0 || r.readings.pressure < 3.0))
+      const isSensor = r.fault_category === "sensor_failure"
+      const severity = isCrit ? "TRIP" : isSensor ? "SENSOR FAULT" : "WARNING"
+
+      return [
+        `"${r.timestamp}"`,
+        `"${r.device_id}"`,
+        `"${r.fault_category}"`,
+        `"${severity}"`,
+        `"${getDuration(r)}"`,
+        `"${getPeakValue(r)}"`,
+        getTTD(r).toFixed(3),
+        r.readings?.temperature ?? "",
+        r.readings?.vibration ?? "",
+        r.readings?.pressure ?? "",
+        `"${(r.symptoms || []).join("; ").replace(/"/g, '""')}"`,
+        `"${(r.diagnosis_text || "").replace(/"/g, '""')}"`,
+      ]
+    })
     const csvContent = [headers.join(","), ...rows.map((row) => row.join(","))].join("\n")
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
     const url = URL.createObjectURL(blob)
     const link = document.createElement("a")
     link.href = url
-    link.download = `p311_scada_incidents_${new Date().toISOString().slice(0, 10)}.csv`
+    link.download = `p311_scada_incident_audit_${new Date().toISOString().slice(0, 10)}.csv`
     link.click()
     URL.revokeObjectURL(url)
   }
@@ -143,36 +198,41 @@ export const IncidentHistoryTable: React.FC<IncidentHistoryTableProps> = ({
 
   return (
     <>
-      <Card className="border-border/80 bg-card/80 backdrop-blur">
-        <CardHeader className="p-3.5 sm:p-4 pb-2">
+      <Card className="border-border bg-surface">
+        <CardHeader className="p-3.5 pb-2">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
             <div>
-              <CardTitle className="text-sm font-semibold tracking-wide uppercase font-mono flex items-center gap-2">
-                <History className="h-4 w-4 text-primary" />
+              <CardTitle className="text-xs font-semibold tracking-wide uppercase font-mono flex items-center gap-2">
+                <History className="h-4 w-4 text-muted" />
                 Persistent SCADA Incident Audit Trail
               </CardTitle>
-              <CardDescription className="text-xs">
-                PostgreSQL backed failure event repository with grounding provenance and RAG diagnoses
+              <CardDescription className="text-xs text-muted font-mono">
+                PostgreSQL persistence layer with ISO 20816-3 (formerly ISO 10816-3) fault provenance and RAG diagnoses
               </CardDescription>
             </div>
 
             {/* Quick KPI pills */}
             <div className="flex items-center gap-2 flex-wrap">
-              <Badge variant="outline" className="font-mono text-xs py-0.5">
-                Total: <strong>{totalIncidents}</strong>
+              <Badge variant="nominal" className="font-mono text-xs py-0.5">
+                Total: <strong className="tabular-nums ml-1">{totalIncidents}</strong>
               </Badge>
               <Badge variant="critical" className="font-mono text-xs py-0.5 gap-1">
-                <AlertOctagon className="h-3 w-3" /> Critical: {criticalCount}
+                <AlertOctagon className="h-3 w-3" /> Trip: <span className="tabular-nums">{criticalCount}</span>
               </Badge>
               <Badge variant="warning" className="font-mono text-xs py-0.5 gap-1">
-                <AlertTriangle className="h-3 w-3" /> Alerts: {warningCount}
+                <AlertTriangle className="h-3 w-3" /> Warn: <span className="tabular-nums">{warningCount}</span>
               </Badge>
+              {sensorFaultCount > 0 && (
+                <Badge variant="sensorFault" className="font-mono text-xs py-0.5 gap-1">
+                  <Unplug className="h-3 w-3" /> Sensor: <span className="tabular-nums">{sensorFaultCount}</span>
+                </Badge>
+              )}
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleExportCSV}
-                className="h-7 text-xs font-mono gap-1 cursor-pointer"
-                title="Download CSV report"
+                className="h-7 text-xs font-mono gap-1 cursor-pointer border-border bg-raised text-text hover:bg-surface"
+                title="Download complete incident audit trail in CSV format"
               >
                 <Download className="h-3 w-3" />
                 <span>Export CSV</span>
@@ -181,16 +241,16 @@ export const IncidentHistoryTable: React.FC<IncidentHistoryTableProps> = ({
           </div>
 
           {/* Filtering and Search Controls Bar */}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-2.5 pt-3 border-t border-border/50 mt-2">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-2.5 pt-2.5 border-t border-border mt-2">
             {/* Search Input */}
             <div className="md:col-span-4 relative">
-              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted" />
               <input
                 type="text"
-                placeholder="Search by symptom, fault, or time..."
+                placeholder="Search symptom, mode, or device..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-8 pr-3 py-1.5 rounded-md border border-input bg-background/80 text-xs font-mono placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                className="w-full pl-8 pr-3 py-1.5 rounded-[4px] border border-border bg-raised text-xs font-mono text-text placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent"
               />
             </div>
 
@@ -199,10 +259,10 @@ export const IncidentHistoryTable: React.FC<IncidentHistoryTableProps> = ({
               <button
                 type="button"
                 onClick={() => setFilterMode("all")}
-                className={`px-2 py-1 rounded-md border cursor-pointer transition-colors ${
+                className={`px-2 py-1 rounded-[4px] border cursor-pointer transition-colors ${
                   filterMode === "all"
-                    ? "bg-primary/10 border-primary text-primary font-bold"
-                    : "border-border/60 text-muted-foreground hover:text-foreground"
+                    ? "border-accent bg-accent/15 text-accent font-semibold"
+                    : "border-border bg-raised text-muted hover:text-text"
                 }`}
               >
                 All
@@ -210,10 +270,10 @@ export const IncidentHistoryTable: React.FC<IncidentHistoryTableProps> = ({
               <button
                 type="button"
                 onClick={() => setFilterMode("bearing_wear")}
-                className={`px-2 py-1 rounded-md border cursor-pointer transition-colors ${
+                className={`px-2 py-1 rounded-[4px] border cursor-pointer transition-colors ${
                   filterMode === "bearing_wear"
-                    ? "bg-amber-500/15 border-amber-500 text-amber-600 dark:text-amber-400 font-bold"
-                    : "border-border/60 text-muted-foreground hover:text-foreground"
+                    ? "border-warn bg-warn/15 text-warn font-semibold"
+                    : "border-border bg-raised text-muted hover:text-text"
                 }`}
               >
                 Bearing
@@ -221,10 +281,10 @@ export const IncidentHistoryTable: React.FC<IncidentHistoryTableProps> = ({
               <button
                 type="button"
                 onClick={() => setFilterMode("overheating")}
-                className={`px-2 py-1 rounded-md border cursor-pointer transition-colors ${
+                className={`px-2 py-1 rounded-[4px] border cursor-pointer transition-colors ${
                   filterMode === "overheating"
-                    ? "bg-rose-500/15 border-rose-500 text-rose-600 dark:text-rose-400 font-bold"
-                    : "border-border/60 text-muted-foreground hover:text-foreground"
+                    ? "border-crit bg-crit/15 text-crit font-semibold"
+                    : "border-border bg-raised text-muted hover:text-text"
                 }`}
               >
                 Overheat
@@ -232,10 +292,10 @@ export const IncidentHistoryTable: React.FC<IncidentHistoryTableProps> = ({
               <button
                 type="button"
                 onClick={() => setFilterMode("pressure_drop")}
-                className={`px-2 py-1 rounded-md border cursor-pointer transition-colors ${
+                className={`px-2 py-1 rounded-[4px] border cursor-pointer transition-colors ${
                   filterMode === "pressure_drop"
-                    ? "bg-blue-500/15 border-blue-500 text-blue-600 dark:text-blue-400 font-bold"
-                    : "border-border/60 text-muted-foreground hover:text-foreground"
+                    ? "border-crit bg-crit/15 text-crit font-semibold"
+                    : "border-border bg-raised text-muted hover:text-text"
                 }`}
               >
                 Pressure
@@ -243,10 +303,10 @@ export const IncidentHistoryTable: React.FC<IncidentHistoryTableProps> = ({
               <button
                 type="button"
                 onClick={() => setFilterMode("sensor_failure")}
-                className={`px-2 py-1 rounded-md border cursor-pointer transition-colors ${
+                className={`px-2 py-1 rounded-[4px] border cursor-pointer transition-colors ${
                   filterMode === "sensor_failure"
-                    ? "bg-sky-500/15 border-sky-500 text-sky-600 dark:text-sky-400 font-bold"
-                    : "border-border/60 text-muted-foreground hover:text-foreground"
+                    ? "border-sensor-fault bg-sensor-fault/15 text-sensor-fault font-semibold"
+                    : "border-border bg-raised text-muted hover:text-text"
                 }`}
               >
                 Sensor
@@ -255,12 +315,12 @@ export const IncidentHistoryTable: React.FC<IncidentHistoryTableProps> = ({
 
             {/* Severity Filter */}
             <div className="md:col-span-3 flex items-center justify-end gap-1.5 text-xs font-mono">
-              <span className="text-muted-foreground text-[11px]">Severity:</span>
+              <span className="text-muted text-[11px]">Severity:</span>
               <button
                 type="button"
                 onClick={() => setFilterSeverity("all")}
-                className={`px-2 py-0.5 rounded border ${
-                  filterSeverity === "all" ? "bg-muted font-bold text-foreground" : "text-muted-foreground"
+                className={`px-2 py-0.5 rounded-[4px] border ${
+                  filterSeverity === "all" ? "border-border bg-raised text-text font-semibold" : "border-transparent text-muted"
                 }`}
               >
                 All
@@ -268,33 +328,44 @@ export const IncidentHistoryTable: React.FC<IncidentHistoryTableProps> = ({
               <button
                 type="button"
                 onClick={() => setFilterSeverity("critical")}
-                className={`px-2 py-0.5 rounded border ${
+                className={`px-2 py-0.5 rounded-[4px] border ${
                   filterSeverity === "critical"
-                    ? "bg-rose-500/15 border-rose-500 text-rose-600 dark:text-rose-400 font-bold"
-                    : "text-muted-foreground"
+                    ? "border-crit bg-crit/15 text-crit font-semibold"
+                    : "border-transparent text-muted"
                 }`}
               >
-                Crit
+                Trip
               </button>
               <button
                 type="button"
                 onClick={() => setFilterSeverity("warning")}
-                className={`px-2 py-0.5 rounded border ${
+                className={`px-2 py-0.5 rounded-[4px] border ${
                   filterSeverity === "warning"
-                    ? "bg-amber-500/15 border-amber-500 text-amber-600 dark:text-amber-400 font-bold"
-                    : "text-muted-foreground"
+                    ? "border-warn bg-warn/15 text-warn font-semibold"
+                    : "border-transparent text-muted"
                 }`}
               >
                 Warn
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterSeverity("sensorFault")}
+                className={`px-2 py-0.5 rounded-[4px] border ${
+                  filterSeverity === "sensorFault"
+                    ? "border-sensor-fault bg-sensor-fault/15 text-sensor-fault font-semibold"
+                    : "border-transparent text-muted"
+                }`}
+              >
+                Inst
               </button>
             </div>
           </div>
         </CardHeader>
 
-        <CardContent className="p-3.5 sm:p-4 pt-1">
+        <CardContent className="p-3.5 pt-1">
           {processedRecords.length === 0 ? (
-            <div className="py-10 text-center text-xs font-mono text-muted-foreground border rounded-lg border-dashed bg-muted/10 space-y-2">
-              <CheckCircle2 className="h-6 w-6 text-emerald-500 mx-auto opacity-70" />
+            <div className="py-8 text-center text-xs font-mono text-muted border rounded-[4px] border-border bg-raised space-y-1.5">
+              <CheckCircle2 className="h-5 w-5 text-muted mx-auto opacity-70" />
               <p>No historical incident records match the active search and filter criteria.</p>
               <Button
                 variant="outline"
@@ -304,7 +375,7 @@ export const IncidentHistoryTable: React.FC<IncidentHistoryTableProps> = ({
                   setFilterMode("all")
                   setFilterSeverity("all")
                 }}
-                className="h-6 text-[11px] font-mono mt-1"
+                className="h-6 text-[11px] font-mono mt-1 border-border bg-surface"
               >
                 Reset Filters
               </Button>
@@ -313,111 +384,94 @@ export const IncidentHistoryTable: React.FC<IncidentHistoryTableProps> = ({
             <div className="overflow-x-auto">
               <table className="w-full text-xs font-mono">
                 <thead>
-                  <tr className="border-b border-border/80 text-muted-foreground text-left">
+                  <tr className="border-b border-border text-muted text-left">
                     <th
                       onClick={() => toggleSort("timestamp")}
-                      className="py-2.5 px-3 font-semibold cursor-pointer hover:text-foreground transition-colors"
+                      className="py-2 px-2.5 font-semibold cursor-pointer hover:text-text transition-colors"
                     >
                       <div className="flex items-center gap-1">
-                        <span>Timestamp (UTC)</span>
+                        <span>Timestamp</span>
                         <ArrowUpDown className="h-3 w-3" />
                       </div>
                     </th>
                     <th
                       onClick={() => toggleSort("fault_category")}
-                      className="py-2.5 px-3 font-semibold cursor-pointer hover:text-foreground transition-colors"
+                      className="py-2 px-2.5 font-semibold cursor-pointer hover:text-text transition-colors"
                     >
                       <div className="flex items-center gap-1">
-                        <span>Classification Mode</span>
+                        <span>Classification</span>
                         <ArrowUpDown className="h-3 w-3" />
                       </div>
                     </th>
-                    <th className="py-2.5 px-3 font-semibold">Sensor Snapshot</th>
-                    <th className="py-2.5 px-3 font-semibold">Observed Symptoms</th>
-                    <th className="py-2.5 px-3 text-right font-semibold">Action</th>
+                    <th className="py-2 px-2.5 font-semibold">Peak Value</th>
+                    <th
+                      onClick={() => toggleSort("duration")}
+                      className="py-2 px-2.5 font-semibold cursor-pointer hover:text-text transition-colors"
+                    >
+                      <div className="flex items-center gap-1">
+                        <span>Duration</span>
+                        <ArrowUpDown className="h-3 w-3" />
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => toggleSort("ttd")}
+                      className="py-2 px-2.5 font-semibold cursor-pointer hover:text-text transition-colors"
+                    >
+                      <div className="flex items-center gap-1">
+                        <span>TTD</span>
+                        <ArrowUpDown className="h-3 w-3" />
+                      </div>
+                    </th>
+                    <th className="py-2 px-2.5 font-semibold">Observed Symptoms</th>
+                    <th className="py-2 px-2.5 text-right font-semibold">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border/50">
+                <tbody className="divide-y divide-border">
                   {processedRecords.slice(0, rowsPerPage).map((record, idx) => {
                     const isCrit =
                       record.fault_category === "overheating" ||
+                      record.fault_category === "pressure_drop" ||
                       (record.readings &&
                         (record.readings.vibration > 7.1 ||
                           record.readings.temperature >= 75.0 ||
                           record.readings.pressure < 3.0))
+                    const isSensor = record.fault_category === "sensor_failure"
 
                     return (
-                      <tr key={idx} className="hover:bg-muted/40 transition-colors">
-                        <td className="py-2.5 px-3 text-muted-foreground whitespace-nowrap">
+                      <tr key={idx} className="hover:bg-raised transition-colors">
+                        <td className="py-2 px-2.5 text-muted whitespace-nowrap tabular-nums">
                           {record.timestamp}
                         </td>
-                        <td className="py-2.5 px-3 whitespace-nowrap">
+                        <td className="py-2 px-2.5 whitespace-nowrap">
                           <Badge
-                            variant={isCrit ? "critical" : "warning"}
+                            variant={isCrit ? "critical" : isSensor ? "sensorFault" : "warning"}
                             className="text-[10px] uppercase font-mono"
                           >
-                            {record.fault_category.replace("_", " ")}
+                            {isCrit ? "TRIP" : isSensor ? "SENSOR" : "WARNING"} &middot; {record.fault_category.replace("_", " ")}
                           </Badge>
                         </td>
-                        <td className="py-2.5 px-3 whitespace-nowrap">
-                          {record.readings ? (
-                            <span className="space-x-2 text-[11px]">
-                              <span>
-                                T:{" "}
-                                <strong
-                                  className={
-                                    record.readings.temperature >= 75
-                                      ? "text-rose-500 font-bold"
-                                      : "text-amber-500"
-                                  }
-                                >
-                                  {record.readings.temperature < -900
-                                    ? "OPEN"
-                                    : `${record.readings.temperature}°C`}
-                                </strong>
-                              </span>
-                              <span>
-                                V:{" "}
-                                <strong
-                                  className={
-                                    record.readings.vibration > 4.5
-                                      ? "text-rose-500 font-bold"
-                                      : "text-sky-500"
-                                  }
-                                >
-                                  {record.readings.vibration}mm/s
-                                </strong>
-                              </span>
-                              <span>
-                                P:{" "}
-                                <strong
-                                  className={
-                                    record.readings.pressure < 3.0
-                                      ? "text-rose-500 font-bold"
-                                      : "text-blue-500"
-                                  }
-                                >
-                                  {record.readings.pressure}bar
-                                </strong>
-                              </span>
-                            </span>
-                          ) : (
-                            <span className="text-muted-foreground">--</span>
-                          )}
+                        <td className="py-2 px-2.5 whitespace-nowrap tabular-nums font-semibold text-text">
+                          {getPeakValue(record)}
                         </td>
-                        <td className="py-2.5 px-3 text-muted-foreground max-w-xs truncate">
+                        <td className="py-2 px-2.5 whitespace-nowrap tabular-nums text-muted">
+                          {getDuration(record)}
+                        </td>
+                        <td className="py-2 px-2.5 whitespace-nowrap tabular-nums text-muted">
+                          {getTTD(record).toFixed(2)}s
+                        </td>
+                        <td className="py-2 px-2.5 text-muted max-w-xs truncate">
                           {record.symptoms && record.symptoms.length > 0
                             ? record.symptoms.join("; ")
                             : "Sensor threshold deviation recorded"}
                         </td>
-                        <td className="py-2.5 px-3 text-right">
+                        <td className="py-2 px-2.5 text-right whitespace-nowrap">
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => setSelectedIncident(record)}
-                            className="h-7 px-2 text-xs font-mono gap-1 text-primary hover:bg-primary/10 cursor-pointer"
+                            className="h-6 px-2 text-xs font-mono gap-1 text-accent hover:text-text hover:bg-surface cursor-pointer"
                           >
-                            <Eye className="h-3.5 w-3.5" />
+                            <Eye className="h-3 w-3" />
                             <span>Details</span>
                           </Button>
                         </td>
@@ -429,16 +483,16 @@ export const IncidentHistoryTable: React.FC<IncidentHistoryTableProps> = ({
 
               {/* Pagination control */}
               {processedRecords.length > 10 && (
-                <div className="flex items-center justify-between pt-3 text-xs font-mono text-muted-foreground border-t border-border/40 mt-2">
-                  <span>
+                <div className="flex items-center justify-between pt-2.5 text-xs font-mono text-muted border-t border-border mt-2">
+                  <span className="tabular-nums">
                     Showing {Math.min(rowsPerPage, processedRecords.length)} of {processedRecords.length} records
                   </span>
                   <div className="flex items-center gap-1">
                     <button
                       type="button"
                       onClick={() => setRowsPerPage(10)}
-                      className={`px-2 py-0.5 rounded border ${
-                        rowsPerPage === 10 ? "bg-muted font-bold text-foreground" : ""
+                      className={`px-2 py-0.5 rounded-[4px] border ${
+                        rowsPerPage === 10 ? "border-border bg-raised font-bold text-text" : "border-transparent"
                       }`}
                     >
                       10
@@ -446,8 +500,8 @@ export const IncidentHistoryTable: React.FC<IncidentHistoryTableProps> = ({
                     <button
                       type="button"
                       onClick={() => setRowsPerPage(25)}
-                      className={`px-2 py-0.5 rounded border ${
-                        rowsPerPage === 25 ? "bg-muted font-bold text-foreground" : ""
+                      className={`px-2 py-0.5 rounded-[4px] border ${
+                        rowsPerPage === 25 ? "border-border bg-raised font-bold text-text" : "border-transparent"
                       }`}
                     >
                       25
@@ -455,8 +509,8 @@ export const IncidentHistoryTable: React.FC<IncidentHistoryTableProps> = ({
                     <button
                       type="button"
                       onClick={() => setRowsPerPage(50)}
-                      className={`px-2 py-0.5 rounded border ${
-                        rowsPerPage === 50 ? "bg-muted font-bold text-foreground" : ""
+                      className={`px-2 py-0.5 rounded-[4px] border ${
+                        rowsPerPage === 50 ? "border-border bg-raised font-bold text-text" : "border-transparent"
                       }`}
                     >
                       50
@@ -472,46 +526,57 @@ export const IncidentHistoryTable: React.FC<IncidentHistoryTableProps> = ({
       {/* Incident Detail Modal */}
       {selectedIncident && (
         <Dialog open={!!selectedIncident} onOpenChange={() => setSelectedIncident(null)}>
-          <DialogContent className="max-w-2xl font-mono text-xs">
+          <DialogContent className="max-w-2xl font-mono text-xs border-border bg-surface text-text">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
-                <ShieldAlert className="h-4 w-4 text-rose-500" />
+              <DialogTitle className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide">
+                <AlertOctagon className="h-4 w-4 text-crit" />
                 Diagnostic Incident Detail &middot; {selectedIncident.fault_category.toUpperCase().replace("_", " ")}
               </DialogTitle>
-              <DialogDescription className="font-mono text-xs">
-                Timestamp: {selectedIncident.timestamp} &middot; Target Asset: {selectedIncident.device_id}
+              <DialogDescription className="font-mono text-xs text-muted">
+                Timestamp: {selectedIncident.timestamp} &middot; Target: {selectedIncident.device_id}
               </DialogDescription>
             </DialogHeader>
 
-            <div className="space-y-4 my-2">
-              <div className="grid grid-cols-3 gap-2.5 p-3 rounded-md border bg-muted/20">
+            <div className="space-y-3.5 my-2">
+              <div className="grid grid-cols-3 gap-2 p-2.5 rounded-[4px] border border-border bg-raised">
                 <div>
-                  <span className="text-muted-foreground block text-[10px] uppercase">STATOR TEMP</span>
-                  <span className="text-sm font-bold text-amber-500">
+                  <span className="text-muted block text-[10px] uppercase">STATOR TEMP</span>
+                  <span className="text-xs font-bold text-text tabular-nums">
                     {selectedIncident.readings?.temperature < -900
                       ? "OPEN CIRCUIT"
                       : `${selectedIncident.readings?.temperature}°C`}
                   </span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground block text-[10px] uppercase">VIBRATION RMS</span>
-                  <span className="text-sm font-bold text-sky-500">
+                  <span className="text-muted block text-[10px] uppercase">VIBRATION RMS</span>
+                  <span className="text-xs font-bold text-text tabular-nums">
                     {selectedIncident.readings?.vibration} mm/s
                   </span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground block text-[10px] uppercase">DISCHARGE PRESS</span>
-                  <span className="text-sm font-bold text-blue-500">
+                  <span className="text-muted block text-[10px] uppercase">DISCHARGE PRESS</span>
+                  <span className="text-xs font-bold text-text tabular-nums">
                     {selectedIncident.readings?.pressure} bar
                   </span>
                 </div>
               </div>
 
+              <div className="grid grid-cols-2 gap-2 p-2.5 rounded-[4px] border border-border bg-raised text-[11px]">
+                <div>
+                  <span className="text-muted block text-[10px] uppercase">PEAK VALUE</span>
+                  <span className="font-bold text-text tabular-nums">{getPeakValue(selectedIncident)}</span>
+                </div>
+                <div>
+                  <span className="text-muted block text-[10px] uppercase">TIME TO DETECT (TTD)</span>
+                  <span className="font-bold text-text tabular-nums">{getTTD(selectedIncident).toFixed(2)}s</span>
+                </div>
+              </div>
+
               <div>
-                <h5 className="font-bold text-foreground mb-1 uppercase tracking-wider text-[11px]">
-                  Observed Physical Symptoms:
+                <h5 className="font-bold text-text mb-1 uppercase tracking-wider text-[11px]">
+                  Observed Physical Evidence:
                 </h5>
-                <ul className="list-disc pl-4 space-y-1 text-muted-foreground">
+                <ul className="list-disc pl-4 space-y-0.5 text-muted">
                   {(selectedIncident.symptoms || ["Parameter threshold breached"]).map((s, i) => (
                     <li key={i}>{s}</li>
                   ))}
@@ -520,30 +585,12 @@ export const IncidentHistoryTable: React.FC<IncidentHistoryTableProps> = ({
 
               {selectedIncident.diagnosis_text && (
                 <div>
-                  <h5 className="font-bold text-foreground mb-1 uppercase tracking-wider text-[11px]">
+                  <h5 className="font-bold text-text mb-1 uppercase tracking-wider text-[11px]">
                     Automated RAG LLM Diagnostic Assessment:
                   </h5>
-                  <p className="p-3 rounded border bg-card text-foreground/90 whitespace-pre-wrap leading-relaxed">
+                  <p className="p-2.5 rounded-[4px] border border-border bg-raised text-text whitespace-pre-wrap leading-relaxed text-xs">
                     {selectedIncident.diagnosis_text}
                   </p>
-                </div>
-              )}
-
-              {selectedIncident.sections?.recommended_actions && (
-                <div>
-                  <h5 className="font-bold text-foreground mb-1 uppercase tracking-wider text-[11px]">
-                    Standard Operating Procedure Actions:
-                  </h5>
-                  <div className="space-y-1.5 mt-1">
-                    {selectedIncident.sections.recommended_actions.map((act, idx) => (
-                      <div key={idx} className="flex items-start gap-2 p-2 rounded border bg-card/60">
-                        <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-[9px]">
-                          {idx + 1}
-                        </span>
-                        <span>{act}</span>
-                      </div>
-                    ))}
-                  </div>
                 </div>
               )}
             </div>

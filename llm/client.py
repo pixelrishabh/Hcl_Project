@@ -197,7 +197,7 @@ class LocalLLMClient:
         )
         if "bearing" in category:
             why_text += (
-                "Vibration velocity RMS exceeds the ISO 10816 Zone D boundary (4.5 mm/s), "
+                "Vibration velocity RMS enters the ISO 20816-3 (formerly ISO 10816-3) Zone C alert boundary (4.5-7.1 mm/s), "
                 "characteristic of inner raceway micro-spalling or boundary lubrication breakdown."
             )
         elif "overheating" in category:
@@ -266,7 +266,7 @@ def main() -> int:
         "timestamp": "2026-10-01T01:24:00Z",
         "fault_category": "bearing_wear",
         "symptoms": [
-            "critical bearing vibration velocity RMS of 6.34 mm/s exceeding ISO 10816 Zone D danger limit",
+            "critical bearing vibration velocity RMS of 6.34 mm/s entering ISO 20816-3 Zone C alert band (4.5-7.1 mm/s)",
             "secondary frictional temperature rise of 67.80 C",
         ],
         "readings": {"temperature": 67.8, "vibration": 6.34, "pressure": 5.01},

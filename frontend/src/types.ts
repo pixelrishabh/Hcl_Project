@@ -1,3 +1,5 @@
+export type SensorQuality = "GOOD" | "STALE" | "BAD"
+
 export interface SensorReading {
   device_id: string
   timestamp: string
@@ -6,6 +8,11 @@ export interface SensorReading {
   pressure: number
   mode?: string
   fault_status?: string
+  quality?: {
+    temperature: SensorQuality
+    vibration: SensorQuality
+    pressure: SensorQuality
+  }
 }
 
 export interface RetrievedSource {
@@ -35,6 +42,25 @@ export interface DiagnosisRecord {
   }
   runtime?: string
   latency_seconds?: number
+  duration?: string
+  peak_value?: string
+  time_to_detect?: string
+}
+
+export interface ActiveAlarm {
+  id: string
+  title: string
+  severity: "CRITICAL" | "WARNING" | "SENSOR_FAULT"
+  raisedAt: string
+  acknowledged: boolean
+  channel?: "temperature" | "vibration" | "pressure" | "system"
+  message: string
+}
+
+export interface HealthBreakdown {
+  score: number
+  status: "NOMINAL" | "WARNING" | "TRIP" | "SENSOR_FAULT"
+  deductions: Record<string, number>
 }
 
 export interface DatabaseStats {
@@ -78,6 +104,7 @@ export interface StatusResponse {
   total_diagnoses?: number
   llm_runtime?: string
   database?: DatabaseStats
+  health_index?: HealthBreakdown
   dataset?: {
     name: string
     records: number

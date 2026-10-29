@@ -137,13 +137,17 @@ class FaultDetector:
             fault_category = "sensor_failure"
 
         # ----------------------------------------------------------------------
-        # Rule 2: Critical Bearing Degradation (ISO 10816 Zone D)
+        # Rule 2: Bearing Degradation (ISO 20816-3 Zone C Alert / Zone D Trip)
         # ----------------------------------------------------------------------
         elif mean_vib >= VIB_WARNING_THRESHOLD:
             fault_category = "bearing_wear"
+            zone_desc = (
+                "exceeding ISO 20816-3 Zone D trip limit of 7.1 mm/s"
+                if mean_vib > 7.1
+                else f"entering ISO 20816-3 (formerly ISO 10816-3) Zone C alert band of {VIB_WARNING_THRESHOLD:.1f} mm/s"
+            )
             symptoms.append(
-                f"critical bearing vibration velocity RMS of {mean_vib:.2f} mm/s "
-                f"exceeding ISO 10816 Zone D danger limit of {VIB_WARNING_THRESHOLD:.1f} mm/s"
+                f"critical bearing vibration velocity RMS of {mean_vib:.2f} mm/s {zone_desc}"
             )
             # Check for secondary frictional heating
             if mean_temp > TEMP_NORMAL_MAX:

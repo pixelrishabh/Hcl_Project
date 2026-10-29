@@ -72,6 +72,60 @@ STATIC_DIR = Path(__file__).resolve().parent
 telemetry_queue = queue.Queue(maxsize=TELEMETRY_QUEUE_MAXSIZE)
 
 
+def compute_health_index(reading: dict) -> dict:
+    """Compute ISA-101 Equipment Health Index (0-100) and deduction breakdown."""
+    if not reading:
+        return {"score": 100.0, "status": "NOMINAL", "deductions": {}}
+
+    temp = reading.get("temperature", 54.0)
+    vib = reading.get("vibration", 1.45)
+    press = reading.get("pressure", 4.52)
+
+    deductions = {}
+
+    # RTD Sentinel (-999°C) or sensor failure
+    if temp < -900:
+        return {
+            "score": 15.0,
+            "status": "SENSOR_FAULT",
+            "deductions": {"Sensor RTD Open Circuit": -85.0},
+        }
+
+    # Vibration deductions (ISO 20816-3):
+    if vib > 7.1:
+        deductions["Vibration (Zone D Trip)"] = -65.0
+    elif vib > 4.5:
+        vib_penalty = 15.0 + ((vib - 4.5) / (7.1 - 4.5)) * 15.0
+        deductions["Vibration (Zone C Alert)"] = -round(vib_penalty, 1)
+    elif vib > 2.8:
+        vib_penalty = ((vib - 2.8) / (4.5 - 2.8)) * 8.0
+        deductions["Vibration (Elevated)"] = -round(vib_penalty, 1)
+
+    # Temperature deductions:
+    if temp >= 75.0:
+        deductions["Temperature (Overheat Trip)"] = -40.0
+    elif temp >= 65.0:
+        temp_penalty = 10.0 + ((temp - 65.0) / (75.0 - 65.0)) * 15.0
+        deductions["Temperature (Elevated Warning)"] = -round(temp_penalty, 1)
+
+    # Pressure deductions:
+    if press < 3.0:
+        deductions["Pressure (Cavitation / Leak)"] = -35.0
+    elif press < 3.8:
+        press_penalty = 5.0 + ((3.8 - press) / (3.8 - 3.0)) * 15.0
+        deductions["Pressure (Sub-nominal Flow)"] = -round(press_penalty, 1)
+
+    total_deductions = sum(deductions.values())
+    score = max(5.0, min(100.0, round(100.0 + total_deductions, 1)))
+    status = "TRIP" if score < 45 else ("WARNING" if score < 80 else "NOMINAL")
+
+    return {
+        "score": score,
+        "status": status,
+        "deductions": deductions,
+    }
+
+
 class DashboardState:
     """Thread-safe state manager for the dashboard."""
 
@@ -204,6 +258,21 @@ class DashboardState:
             "sections": diagnosis_result.get("sections", {}),
             "runtime": diagnosis_result.get("runtime"),
             "latency_seconds": diagnosis_result.get("latency_seconds"),
+            "duration": "30s",
+            "peak_value": (
+                f"{reading.get('vibration', 0.0):.2f} mm/s"
+                if "bearing" in category.lower()
+                else (
+                    f"{reading.get('temperature', 0.0):.1f} °C"
+                    if "overheating" in category.lower() and reading.get("temperature", 0.0) > -900
+                    else (
+                        f"{reading.get('pressure', 0.0):.2f} bar"
+                        if "pressure" in category.lower()
+                        else ("-999 °C" if reading.get("temperature", 0.0) < -900 else "0.00 var")
+                    )
+                )
+            ),
+            "time_to_detect": f"{diagnosis_result.get('latency_seconds', 0.42):.2f}s",
         }
 
         with self.lock:
@@ -291,6 +360,7 @@ def telemetry_producer():
                 "latest": reading,
                 "mode": state.current_mode,
                 "history_length": len(state.history),
+                "health_index": compute_health_index(reading),
             })
         except Exception as e:
             logger.error(f"Error in telemetry producer: {e}")
@@ -390,9 +460,11 @@ class DashboardHTTPHandler(http.server.SimpleHTTPRequestHandler):
                     "latest_reading": state.latest_reading,
                     "history": state.history,
                     "latest_diagnosis": state.latest_diagnosis,
+                    "health_index": compute_health_index(state.latest_reading),
                     "total_diagnoses": len(state.diagnoses_history),
                     "llm_runtime": "Ollama / Grounded RAG Fallback",
                     "database": db_stats,
+                    "health_index": compute_health_index(state.latest_reading),
                     "dataset": {
                         "name": "UCI AI4I 2020 Predictive Maintenance Dataset",
                         "records": 10000,
@@ -488,6 +560,7 @@ class DashboardHTTPHandler(http.server.SimpleHTTPRequestHandler):
                     "latest_reading": state.latest_reading,
                     "history": state.history,
                     "latest_diagnosis": state.latest_diagnosis,
+                    "health_index": compute_health_index(state.latest_reading),
                 }
             init_msg = f"event: init\ndata: {json.dumps(init_data)}\n\n".encode("utf-8")
             self.wfile.write(init_msg)

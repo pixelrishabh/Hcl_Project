@@ -44,7 +44,7 @@ class TestEndToEndIntegration(unittest.TestCase):
     def test_fault_mode_triggers_diagnosis_and_logging(self):
         """Verify overheating telemetry triggers diagnosis, formats report, and logs to disk."""
         sim = PumpTelemetrySimulator(mode=FAULT_MODE_OVERHEATING)
-        for _ in range(15):
+        for _ in range(25):
             reading = sim.step()
             self.pipeline._handle_telemetry(reading)
 

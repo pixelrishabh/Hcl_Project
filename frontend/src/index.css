@@ -4,100 +4,140 @@
 
 @layer base {
   :root {
-    /* Light Mode - WCAG AA compliant high-contrast slate & cobalt */
-    --background: 210 20% 98%;
-    --foreground: 222 47% 11%;
-    --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
-    --primary: 201 96% 32%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 214 32% 91%;
-    --secondary-foreground: 222 47% 11%;
-    --muted: 210 28% 93%;
-    --muted-foreground: 215 25% 35%;
-    --accent: 214 32% 91%;
-    --accent-foreground: 222 47% 11%;
-    --destructive: 0 72% 45%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214 24% 82%;
-    --input: 214 24% 82%;
-    --ring: 201 96% 32%;
-    --radius: 0.5rem;
+    /* ISA-101 Light Theme */
+    --bg: #E9ECEE;
+    --surface: #F6F7F8;
+    --raised: #FFFFFF;
+    --border: #C4CAD0;
+    --text: #1D2327;
+    --muted: #5B656D;
+    --accent: #2F6F9F;
+    --series-temp: #B5662F;
+    --series-vib: #3F7791;
+    --series-press: #5F7F4E;
+    --warn: #B38600;
+    --crit: #B3261E;
+    --sensor-fault: #6B58A8;
+
+    /* RGB values for opacity support in Tailwind */
+    --bg-rgb: 233, 236, 238;
+    --surface-rgb: 246, 247, 248;
+    --raised-rgb: 255, 255, 255;
+    --border-rgb: 196, 202, 208;
+    --text-rgb: 29, 35, 39;
+    --muted-rgb: 91, 101, 109;
+    --accent-rgb: 47, 111, 159;
+    --series-temp-rgb: 181, 102, 47;
+    --series-vib-rgb: 63, 119, 145;
+    --series-press-rgb: 95, 127, 78;
+    --warn-rgb: 179, 134, 0;
+    --crit-rgb: 179, 38, 30;
+    --sensor-fault-rgb: 107, 88, 168;
+
+    /* Shadcn system mappings */
+    --background: var(--bg);
+    --foreground: var(--text);
+    --card: var(--surface);
+    --card-foreground: var(--text);
+    --popover: var(--raised);
+    --popover-foreground: var(--text);
+    --primary: var(--accent);
+    --primary-foreground: #FFFFFF;
+    --secondary: var(--surface);
+    --secondary-foreground: var(--text);
+    --muted-shadcn: var(--surface);
+    --muted-foreground: var(--muted);
+    --accent-shadcn: var(--surface);
+    --accent-foreground: var(--text);
+    --destructive: var(--crit);
+    --destructive-foreground: #FFFFFF;
+    --input: var(--border);
+    --ring: var(--accent);
+    --radius: 0.375rem;
   }
 
   .dark {
-    /* Dark Mode - ISA-101 High-Performance SCADA (Deep Charcoal & Calibrated Accents) */
-    --background: 222 47% 7%;
-    --foreground: 210 40% 96%;
-    --card: 222 40% 10%;
-    --card-foreground: 210 40% 96%;
-    --popover: 222 40% 10%;
-    --popover-foreground: 210 40% 96%;
-    --primary: 199 89% 48%;
-    --primary-foreground: 222 47% 7%;
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 210 40% 96%;
-    --muted: 217 33% 14%;
-    --muted-foreground: 215 20% 68%;
-    --accent: 217 33% 17%;
-    --accent-foreground: 210 40% 96%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217 33% 20%;
-    --input: 217 33% 20%;
-    --ring: 199 89% 48%;
-    --radius: 0.5rem;
+    /* ISA-101 Dark Theme (Default Control Room HMI) */
+    --bg: #1B1F23;
+    --surface: #23282D;
+    --raised: #2C3238;
+    --border: #3A4148;
+    --text: #E3E6E8;
+    --muted: #9AA3AB;
+    --accent: #4A90C2;
+    --series-temp: #D08C60;
+    --series-vib: #7BA7BC;
+    --series-press: #9BB58A;
+    --warn: #E0A800;
+    --crit: #D6453D;
+    --sensor-fault: #8E7CC3;
+
+    /* RGB values for opacity support in Tailwind */
+    --bg-rgb: 27, 31, 35;
+    --surface-rgb: 35, 40, 45;
+    --raised-rgb: 44, 50, 56;
+    --border-rgb: 58, 65, 72;
+    --text-rgb: 227, 230, 232;
+    --muted-rgb: 154, 163, 171;
+    --accent-rgb: 74, 144, 194;
+    --series-temp-rgb: 208, 140, 96;
+    --series-vib-rgb: 123, 167, 188;
+    --series-press-rgb: 155, 181, 138;
+    --warn-rgb: 224, 168, 0;
+    --crit-rgb: 214, 69, 61;
+    --sensor-fault-rgb: 142, 124, 195;
+
+    /* Shadcn system mappings */
+    --background: var(--bg);
+    --foreground: var(--text);
+    --card: var(--surface);
+    --card-foreground: var(--text);
+    --popover: var(--raised);
+    --popover-foreground: var(--text);
+    --primary: var(--accent);
+    --primary-foreground: var(--bg);
+    --secondary: var(--surface);
+    --secondary-foreground: var(--text);
+    --muted-shadcn: var(--surface);
+    --muted-foreground: var(--muted);
+    --accent-shadcn: var(--raised);
+    --accent-foreground: var(--text);
+    --destructive: var(--crit);
+    --destructive-foreground: var(--text);
+    --input: var(--border);
+    --ring: var(--accent);
+    --radius: 0.375rem;
   }
 }
 
 @layer base {
   * {
-    @apply border-border;
+    border-color: var(--border);
   }
   body {
-    @apply bg-background text-foreground;
-    font-feature-settings: "rlig" 1, "calt" 1;
+    background-color: var(--bg);
+    color: var(--text);
+    font-feature-settings: "rlig" 1, "calt" 1, "tnum" 1;
   }
 }
 
-/* Custom Industrial SCADA Refined Accents & Scrollbars */
+/* Tabular numerals for jitter-free telemetry readouts */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Control-room ISA-101 subtle scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: hsl(var(--background));
+  background: var(--bg);
 }
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--border));
+  background: var(--border);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--muted-foreground));
-}
-
-/* Accessible ISA-101 subtle status highlights (non-distracting, high saliency) */
-.scada-badge-nominal {
-  @apply bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-600/30;
-}
-.scada-badge-warning {
-  @apply bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-600/30;
-}
-.scada-badge-critical {
-  @apply bg-rose-500/15 text-rose-800 dark:text-rose-300 border-rose-600/30;
-}
-.scada-badge-info {
-  @apply bg-sky-500/15 text-sky-800 dark:text-sky-300 border-sky-600/30;
-}
-
-.scada-panel-glow-rose {
-  box-shadow: 0 0 16px -2px rgba(244, 63, 94, 0.2);
-}
-.scada-panel-glow-amber {
-  box-shadow: 0 0 16px -2px rgba(245, 158, 11, 0.2);
-}
-.scada-panel-glow-emerald {
-  box-shadow: 0 0 16px -2px rgba(16, 185, 129, 0.15);
+  background: var(--muted);
 }

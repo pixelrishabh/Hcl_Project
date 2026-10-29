@@ -3,19 +3,21 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const alertVariants = cva(
-  "relative w-full rounded-lg border px-4 py-3 text-sm [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg]:text-foreground [&>svg~*]:pl-7",
+  "relative w-full rounded-[4px] border px-3.5 py-2.5 text-xs font-mono [&>svg+div]:translate-y-[-2px] [&>svg]:absolute [&>svg]:left-3.5 [&>svg]:top-3 [&>svg]:text-text [&>svg~*]:pl-6",
   {
     variants: {
       variant: {
-        default: "bg-background text-foreground",
+        default: "border-border bg-surface text-text",
         destructive:
-          "border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive",
+          "border-crit/50 bg-crit/10 text-crit [&>svg]:text-crit font-medium",
         warning:
-          "border-amber-500/50 text-amber-500 dark:border-amber-500 [&>svg]:text-amber-500 bg-amber-500/5",
-        success:
-          "border-emerald-500/50 text-emerald-500 dark:border-emerald-500 [&>svg]:text-emerald-500 bg-emerald-500/5",
-        scada:
-          "border-cyan-500/40 text-cyan-400 dark:border-cyan-500/40 bg-cyan-950/20 [&>svg]:text-cyan-400",
+          "border-warn/50 bg-warn/10 text-warn [&>svg]:text-warn font-medium",
+        sensorFault:
+          "border-sensor-fault/50 bg-sensor-fault/10 text-sensor-fault [&>svg]:text-sensor-fault font-medium",
+        nominal:
+          "border-border bg-raised text-text [&>svg]:text-muted",
+        accent:
+          "border-accent/40 bg-accent/10 text-accent [&>svg]:text-accent",
       },
     },
     defaultVariants: {
@@ -43,7 +45,7 @@ const AlertTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <h5
     ref={ref}
-    className={cn("mb-1 font-medium leading-none tracking-tight", className)}
+    className={cn("mb-1 font-semibold leading-none tracking-wide text-xs uppercase", className)}
     {...props}
   />
 ))
@@ -55,7 +57,7 @@ const AlertDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("text-xs [&_p]:leading-relaxed", className)}
+    className={cn("text-xs text-muted [&_p]:leading-relaxed", className)}
     {...props}
   />
 ))

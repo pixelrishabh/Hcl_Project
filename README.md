@@ -8,7 +8,7 @@
 [![TailwindCSS](https://img.shields.io/badge/TailwindCSS-v3.4-38B2AC.svg?logo=tailwind-css)](https://tailwindcss.com/)
 [![MQTT Mosquitto](https://img.shields.io/badge/MQTT-Mosquitto%20v2.x-orange.svg?logo=eclipse-mosquitto)](https://mosquitto.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16%2B-336791.svg?logo=postgresql)](https://www.postgresql.org/)
-[![Tests Passing](https://img.shields.io/badge/Tests-30%2F30%20Pass-brightgreen.svg)]()
+[![Tests Passing](https://img.shields.io/badge/Tests-38%2F38%20Pass-brightgreen.svg)]()
 [![RAG Recall](https://img.shields.io/badge/RAG%20Top--3%20Recall-100%25-success.svg)]()
 [![Offline Air-Gapped](https://img.shields.io/badge/LLM-100%25%20Offline%20Air--Gapped-purple.svg)]()
 
@@ -225,7 +225,7 @@ Hcl_Project/
 │   ├── benchmark_retrieval.py      # Precision & recall benchmark over 14 manuals
 │   └── evaluate_system.py          # 30-trial full system evaluation suite
 │
-├── tests/                          # Automated unittest test suite (30/30 Pass)
+├── tests/                          # Automated unittest test suite (38/38 Pass)
 │   ├── test_mqtt_pipeline.py       # Payload validation & broker integration
 │   ├── test_fault_simulator.py     # Multi-mode signatures & ground truth
 │   ├── test_fault_detector.py      # Noise immunity & ISO boundary tests
@@ -323,10 +323,10 @@ python mqtt/sensor_simulator.py --mode bearing_wear --count 5
 
 ## 8. Automated Test Suite & Verification
 
-The repository contains an automated test suite with **30 unit and integration tests** achieving 100% pass rates:
+The repository contains an automated test suite with **38 unit and integration tests** achieving 100% pass rates:
 
 ```bash
-# Run all 30 tests
+# Run all 38 tests
 python -m unittest discover tests -v
 ```
 
@@ -339,7 +339,7 @@ python scripts/test_dashboard_live.py
 
 ## 9. Empirical Evaluation Benchmark
 
-Measured from 30 automated trials documented in [`docs/evaluation.md`](file:///c:/Users/Rishabh/OneDrive/Desktop/hcl%20Project/docs/evaluation.md):
+Measured from 30 automated trials documented in [`docs/evaluation.md`](docs/evaluation.md):
 
 | Evaluation Metric | Target Criterion | Measured Result | Status |
 | :--- | :---: | :---: | :---: |
@@ -395,16 +395,16 @@ Measured from 30 automated trials documented in [`docs/evaluation.md`](file:///c
 
 ## 11. Project Documentation & Deliverables
 
-- **[docs/decisions.md](file:///c:/Users/Rishabh/OneDrive/Desktop/hcl%20Project/docs/decisions.md):** Architectural Decisions Record (Stage 0)
-- **[docs/fault_signatures.md](file:///c:/Users/Rishabh/OneDrive/Desktop/hcl%20Project/docs/fault_signatures.md):** Physical Machine Thresholds & Telemetry Profiles (Stage 3)
-- **[docs/knowledge_sources.md](file:///c:/Users/Rishabh/OneDrive/Desktop/hcl%20Project/docs/knowledge_sources.md):** Knowledge Base Provenance Register (Stage 5)
-- **[docs/retrieval_results.md](file:///c:/Users/Rishabh/OneDrive/Desktop/hcl%20Project/docs/retrieval_results.md):** RAG Top-3 Retrieval Benchmark Results (Stage 6)
-- **[docs/evaluation.md](file:///c:/Users/Rishabh/OneDrive/Desktop/hcl%20Project/docs/evaluation.md):** 30-Trial Empirical Evaluation Scorecard (Stage 10)
-- **[docs/database.md](file:///c:/Users/Rishabh/OneDrive/Desktop/hcl%20Project/docs/database.md):** PostgreSQL Persistence Layer Architecture & Operations
-- **[docs/college_project_report.md](file:///c:/Users/Rishabh/OneDrive/Desktop/hcl%20Project/docs/college_project_report.md):** Complete University Engineering Project Report
-- **[docs/viva_prep.md](file:///c:/Users/Rishabh/OneDrive/Desktop/hcl%20Project/docs/viva_prep.md):** 10 Comprehensive Viva Voce Questions & Answers
-- **[docs/presentation_slides_outline.md](file:///c:/Users/Rishabh/OneDrive/Desktop/hcl%20Project/docs/presentation_slides_outline.md):** Viva Defense Presentation PPT Outline
-- **[docs/resume_bullet_points.md](file:///c:/Users/Rishabh/OneDrive/Desktop/hcl%20Project/docs/resume_bullet_points.md):** ATS-Friendly Professional Resume Bullets
+- **[docs/decisions.md](docs/decisions.md):** Architectural Decisions Record (Stage 0)
+- **[docs/fault_signatures.md](docs/fault_signatures.md):** Physical Machine Thresholds & Telemetry Profiles (Stage 3)
+- **[docs/knowledge_sources.md](docs/knowledge_sources.md):** Knowledge Base Provenance Register (Stage 5)
+- **[docs/retrieval_results.md](docs/retrieval_results.md):** RAG Top-3 Retrieval Benchmark Results (Stage 6)
+- **[docs/evaluation.md](docs/evaluation.md):** 30-Trial Empirical Evaluation Scorecard (Stage 10)
+- **[docs/database.md](docs/database.md):** PostgreSQL Persistence Layer Architecture & Operations
+- **[docs/college_project_report.md](docs/college_project_report.md):** Complete University Engineering Project Report
+- **[docs/viva_prep.md](docs/viva_prep.md):** 10 Comprehensive Viva Voce Questions & Answers
+- **[docs/presentation_slides_outline.md](docs/presentation_slides_outline.md):** Viva Defense Presentation PPT Outline
+- **[docs/resume_bullet_points.md](docs/resume_bullet_points.md):** ATS-Friendly Professional Resume Bullets
 
 ---
 

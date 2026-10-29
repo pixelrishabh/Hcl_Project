@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react"
-import { Activity, Cpu, Database, Radio, Moon, Sun, Clock, Zap } from "lucide-react"
+import { Activity, Database, Radio, Moon, Sun, Clock } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 
@@ -49,29 +49,33 @@ export const Header: React.FC<HeaderProps> = ({
   }
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
-        {/* Brand & Machine Title */}
+    <header className="sticky top-0 z-40 w-full border-b border-border bg-surface">
+      <div className="container flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6">
+        {/* Brand & Asset Identification */}
         <div className="flex items-center gap-3">
-          <div className="relative flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 border border-primary/30 text-primary font-mono font-bold shadow-sm">
-            <span className="text-sm tracking-wider">P_311</span>
-            <span className={`absolute -top-1 -right-1 flex h-2.5 w-2.5`}>
-              <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isLive ? 'bg-emerald-400' : 'bg-amber-400'}`}></span>
-              <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${isLive ? 'bg-emerald-500' : 'bg-amber-500'}`}></span>
-            </span>
+          <div className="flex h-8 w-14 items-center justify-center rounded-[4px] bg-raised border border-border text-text font-mono font-bold text-xs tracking-wider">
+            P_311
           </div>
 
           <div className="flex flex-col">
             <div className="flex items-center gap-2">
-              <h1 className="text-sm font-semibold tracking-tight sm:text-base">
-                IoT Fault Diagnosis Assistant
+              <h1 className="text-xs sm:text-sm font-semibold tracking-tight text-text font-mono uppercase">
+                Centrifugal Slurry Pump HMI
               </h1>
-              <Badge variant="outline" className="hidden sm:inline-flex text-[10px] py-0 border-scada-cyan/40 text-scada-cyan bg-scada-cyan/5">
-                SCADA v2.4
+              {/* Persistent Data Source Badge: SIMULATED vs LIVE MQTT */}
+              <Badge
+                variant={isLive ? "scada" : "default"}
+                className={`text-[10px] uppercase font-mono px-2 py-0.5 rounded-[4px] border ${
+                  isLive
+                    ? "border-accent/40 bg-accent/15 text-accent font-semibold"
+                    : "border-border bg-raised text-muted font-normal"
+                }`}
+              >
+                {isLive ? "LIVE MQTT" : "SIMULATED"}
               </Badge>
             </div>
-            <span className="text-xs text-muted-foreground font-mono">
-              Industrial Centrifugal Slurry Pump [API 610 / ISO 10816]
+            <span className="text-[11px] text-muted font-mono">
+              API 610 Heavy Duty Slurry &middot; ISO 20816-3 (formerly ISO 10816-3)
             </span>
           </div>
         </div>
@@ -79,24 +83,17 @@ export const Header: React.FC<HeaderProps> = ({
         {/* System Status Indicators & Controls */}
         <div className="flex items-center gap-2 sm:gap-3">
           {/* MQTT Broker Status */}
-          <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-md border bg-card/60 text-xs font-mono">
-            <Radio className={`h-3.5 w-3.5 ${isLive ? 'text-emerald-400' : 'text-amber-400'}`} />
-            <span className="text-muted-foreground">MQTT:</span>
-            <span className="font-semibold">{isLive ? "1883 ONLINE" : "STANDALONE"}</span>
+          <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-[4px] border border-border bg-surface text-xs font-mono">
+            <Radio className="h-3.5 w-3.5 text-muted" />
+            <span className="text-muted">LINK:</span>
+            <span className="text-text font-semibold">{isLive ? "TCP:1883" : "LOCAL LOOP"}</span>
           </div>
 
-          {/* Telemetry Rate */}
-          <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-md border bg-card/60 text-xs font-mono">
-            <Activity className="h-3.5 w-3.5 text-scada-cyan animate-pulse" />
-            <span className="text-muted-foreground">Stream:</span>
-            <span className="text-scada-cyan font-semibold">{isLive ? "1 Hz LIVE" : "1 Hz DEMO"}</span>
-          </div>
-
-          {/* Diagnostic LLM */}
-          <div className="hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-md border bg-card/60 text-xs font-mono">
-            <Cpu className="h-3.5 w-3.5 text-violet-400" />
-            <span className="text-muted-foreground">LLM:</span>
-            <span className="text-violet-400 font-semibold">RAG ACTIVE</span>
+          {/* Stream Rate */}
+          <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-[4px] border border-border bg-surface text-xs font-mono">
+            <Activity className="h-3.5 w-3.5 text-muted" />
+            <span className="text-muted">SCAN:</span>
+            <span className="text-text tabular-nums font-semibold">1 Hz</span>
           </div>
 
           {/* Connected Dataset & Database Button */}
@@ -104,18 +101,18 @@ export const Header: React.FC<HeaderProps> = ({
             variant="outline"
             size="sm"
             onClick={onOpenDatasetModal}
-            className="h-8 gap-1.5 border-primary/30 bg-primary/5 hover:bg-primary/10 text-primary font-mono text-xs"
+            className="h-7 text-xs font-mono gap-1.5 border-border bg-raised hover:bg-surface text-text"
           >
-            <Database className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">AI4I &amp; PG</span>
-            <Badge variant="secondary" className="ml-0.5 px-1.5 py-0 text-[10px] font-mono">
-              {dbRecords.toLocaleString()}
-            </Badge>
+            <Database className="h-3.5 w-3.5 text-muted" />
+            <span className="hidden sm:inline">DATASET &amp; DB</span>
+            <span className="text-[10px] text-muted tabular-nums">
+              [{dbRecords.toLocaleString()}]
+            </span>
           </Button>
 
-          {/* Clock */}
-          <div className="hidden sm:flex items-center gap-1 px-2 py-1 rounded-md border bg-muted/30 text-xs font-mono text-muted-foreground">
-            <Clock className="h-3 w-3" />
+          {/* Digital Clock */}
+          <div className="hidden sm:flex items-center gap-1 px-2 py-1 rounded-[4px] border border-border bg-raised text-xs font-mono text-text tabular-nums">
+            <Clock className="h-3 w-3 text-muted" />
             <span>{clock}</span>
           </div>
 
@@ -124,13 +121,13 @@ export const Header: React.FC<HeaderProps> = ({
             variant="ghost"
             size="icon"
             onClick={toggleTheme}
-            className="h-8 w-8 rounded-md"
-            title="Toggle theme"
+            className="h-8 w-8 rounded-[4px] border border-border hover:bg-raised text-text"
+            title="Toggle color theme (Light / Dark Control Room)"
           >
             {theme === "dark" ? (
-              <Sun className="h-4 w-4 text-amber-400 transition-all" />
+              <Sun className="h-4 w-4 text-text" />
             ) : (
-              <Moon className="h-4 w-4 text-slate-700 transition-all" />
+              <Moon className="h-4 w-4 text-text" />
             )}
             <span className="sr-only">Toggle theme</span>
           </Button>

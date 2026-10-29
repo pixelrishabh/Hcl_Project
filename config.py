@@ -83,15 +83,17 @@ TEMP_NORMAL_MAX: float = 65.0
 TEMP_WARNING_THRESHOLD: float = 75.0
 
 # Vibration Velocity RMS (mm/s) — Measured radially at bearing housing
-# ISO 10816-3 Class II (medium industrial machines):
+# ISO 20816-3 (formerly ISO 10816-3) Class II (medium industrial machines):
 #   < 2.8 mm/s: Good (Zone A/B)
-#   2.8 - 4.5 mm/s: Acceptable (Zone C)
-#   > 4.5 mm/s: Unsatisfactory / Danger (Zone D)
+#   2.8 - 4.5 mm/s: Acceptable (Zone B)
+#   4.5 - 7.1 mm/s: Restricted Operation / Alert (Zone C)
+#   > 7.1 mm/s: Unsatisfactory / Danger / Trip (Zone D)
 VIB_NORMAL_MIN: float = 0.8
 VIB_NORMAL_MAX: float = 2.5
-# Warning threshold: Vibration > 4.5 mm/s signifies mechanical looseness,
-# severe bearing degradation, or severe dynamic unbalance.
+# Warning threshold: Vibration > 4.5 mm/s enters ISO 20816-3 Zone C alert limit.
 VIB_WARNING_THRESHOLD: float = 4.5
+# Critical trip threshold: Vibration > 7.1 mm/s enters ISO 20816-3 Zone D trip limit.
+VIB_CRITICAL_THRESHOLD: float = 7.1
 
 # Discharge Pressure (bar) — Measured at the pump discharge nozzle
 # Nominal operating range under standard head: 4.0 bar to 6.0 bar

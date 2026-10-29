@@ -7,10 +7,18 @@ Handles connections, circuit breaking for offline Docker states, and health chec
 from contextlib import contextmanager
 import logging
 import time
-from typing import Generator, Optional
+from typing import Any, Generator, Optional
 
-import psycopg
-from psycopg.rows import dict_row
+try:
+    import psycopg
+    from psycopg.rows import dict_row
+except ImportError:
+    try:
+        import psycopg2 as psycopg
+        from psycopg2.extras import RealDictCursor as dict_row
+    except ImportError:
+        psycopg = None
+        dict_row = None
 
 from config import (
     DB_CONNECT_TIMEOUT_SECONDS,
@@ -53,6 +61,11 @@ def is_database_available(force_check: bool = False) -> bool:
     if not force_check and _DB_AVAILABLE is not None and (now - _LAST_CHECK_TIME) < _CHECK_COOLDOWN_SECONDS:
         return _DB_AVAILABLE
 
+    if psycopg is None:
+        _DB_AVAILABLE = False
+        _LAST_CHECK_TIME = now
+        return False
+
     try:
         params = get_connection_params()
         with psycopg.connect(**params) as conn:
@@ -74,7 +87,7 @@ def is_database_available(force_check: bool = False) -> bool:
 
 
 @contextmanager
-def get_db_connection(timeout: int = DB_CONNECT_TIMEOUT_SECONDS) -> Generator[psycopg.Connection, None, None]:
+def get_db_connection(timeout: int = DB_CONNECT_TIMEOUT_SECONDS) -> Generator[Any, None, None]:
     """Context manager providing a transactional psycopg connection.
     
     Automatically commits on normal exit, rolls back on exception,
