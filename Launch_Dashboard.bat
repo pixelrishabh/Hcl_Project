@@ -13,13 +13,13 @@ netstat -ano | findstr :8080 | findstr LISTENING >nul
 if %errorlevel% equ 0 (
     echo [OK] Dashboard Server is already active on http://localhost:8080.
 ) else (
-    echo [2/3] Starting Python Dashboard Server in background...
+    echo [2/3] Starting Python Dashboard Server in a dedicated window...
     if exist ".venv\Scripts\python.exe" (
-        start "P_311 Dashboard Server" /B ".venv\Scripts\python.exe" dashboard\app.py
+        start "P_311 Dashboard Server" ".venv\Scripts\python.exe" dashboard\app.py
     ) else (
-        start "P_311 Dashboard Server" /B python dashboard\app.py
+        start "P_311 Dashboard Server" python dashboard\app.py
     )
-    timeout /t 2 /nobreak >nul
+    ping 127.0.0.1 -n 4 >nul
 )
 
 echo [3/3] Opening Dashboard in your default web browser...
@@ -29,8 +29,8 @@ echo.
 echo =====================================================================
 echo  Dashboard running at: http://localhost:8080
 echo  Connected Dataset: UCI AI4I 2020 Predictive Maintenance (10,000 rows)
-echo  PostgreSQL Persistence: iot_fault_diagnosis (sensor_readings & incidents)
-echo  To close the server, close the Python process or press Ctrl+C.
+echo  PostgreSQL Persistence: iot_fault_diagnosis (sensor_readings ^& incidents)
+echo  To close the server, close the 'P_311 Dashboard Server' console window.
 echo =====================================================================
-timeout /t 5 >nul
+ping 127.0.0.1 -n 3 >nul
 exit
