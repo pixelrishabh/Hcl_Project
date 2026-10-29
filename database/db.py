@@ -106,6 +106,7 @@ def is_database_available(force_check: bool = False) -> bool:
 
 
 @contextmanager
+
 def get_db_connection(timeout: int = DB_CONNECT_TIMEOUT_SECONDS) -> Generator[Any, None, None]:
     """Transactional context manager for PostgreSQL database connections.
     
@@ -490,6 +491,7 @@ def get_database_stats() -> Dict[str, Any]:
             "sensor_readings_count": 0,
             "incidents_count": 0,
             "diagnoses_count": 0,
+            "ai4i_records_count": 0,
             "retention_days": TELEMETRY_RETENTION_DAYS,
         }
     try:
@@ -499,6 +501,11 @@ def get_database_stats() -> Dict[str, Any]:
                 s_count = cur.fetchone()["c"]
                 cur.execute("SELECT COUNT(*) AS c FROM fault_incidents;")
                 f_count = cur.fetchone()["c"]
+                try:
+                    cur.execute("SELECT COUNT(*) AS c FROM ai4i2020_dataset;")
+                    ai4i_count = cur.fetchone()["c"]
+                except Exception:
+                    ai4i_count = 0
                 return {
                     "connected": True,
                     "available": True,
@@ -510,6 +517,7 @@ def get_database_stats() -> Dict[str, Any]:
                     "sensor_readings_count": s_count,
                     "incidents_count": f_count,
                     "diagnoses_count": f_count,
+                    "ai4i_records_count": ai4i_count,
                     "retention_days": TELEMETRY_RETENTION_DAYS,
                     "pruning_interval": "1 hour",
                 }
@@ -526,6 +534,7 @@ def get_database_stats() -> Dict[str, Any]:
             "sensor_readings_count": 0,
             "incidents_count": 0,
             "diagnoses_count": 0,
+            "ai4i_records_count": 0,
             "retention_days": TELEMETRY_RETENTION_DAYS,
             "error": str(e),
         }
@@ -554,3 +563,46 @@ def init_database_schema(schema_file: Optional[Path] = None) -> bool:
     except Exception as e:
         logger.error(f"Failed to apply schema: {e}")
         return False
+
+# ==============================================================================
+# UCI AI4I 2020 Predictive Maintenance Dataset Operations
+# ==============================================================================
+
+def get_ai4i_dataset_stats() -> dict:
+    """Retrieve summary metrics and failure breakdown from ai4i2020_dataset table."""
+    if not is_database_available():
+        return {"available": False, "count": 0}
+
+    query = """
+        SELECT
+            COUNT(*) AS total_count,
+            COUNT(*) FILTER (WHERE machine_failure = 0) AS nominal_count,
+            COUNT(*) FILTER (WHERE machine_failure = 1) AS failure_count,
+            COUNT(*) FILTER (WHERE twf = 1) AS twf_count,
+            COUNT(*) FILTER (WHERE hdf = 1) AS hdf_count,
+            COUNT(*) FILTER (WHERE pwf = 1) AS pwf_count,
+            COUNT(*) FILTER (WHERE osf = 1) AS osf_count,
+            COUNT(*) FILTER (WHERE rnf = 1) AS rnf_count
+        FROM ai4i2020_dataset;
+    """
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(query)
+                row = cur.fetchone()
+                if row:
+                    return {
+                        "available": True,
+                        "total_records": row["total_count"],
+                        "nominal_samples": row["nominal_count"],
+                        "failure_samples": row["failure_count"],
+                        "twf_count": row["twf_count"],
+                        "hdf_count": row["hdf_count"],
+                        "pwf_count": row["pwf_count"],
+                        "osf_count": row["osf_count"],
+                        "rnf_count": row["rnf_count"],
+                    }
+        return {"available": False, "count": 0}
+    except Exception:
+        return {"available": False, "count": 0}
+

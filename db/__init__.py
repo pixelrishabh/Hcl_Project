@@ -1,9 +1,11 @@
 """P_311: Knowledge-Driven IoT Fault Diagnosis Assistant.
 
-Database persistence package for fault incidents and sensor telemetry.
+Data persistence module package.
+Re-exports repository methods from db.repository.
 """
 
 from db.repository import (
+    get_ai4i_dataset_stats,
     get_database_stats,
     get_db_stats,
     get_recent_diagnoses,
@@ -29,4 +31,5 @@ __all__ = [
     "prune_old_telemetry",
     "get_database_stats",
     "get_db_stats",
+    "get_ai4i_dataset_stats",
 ]

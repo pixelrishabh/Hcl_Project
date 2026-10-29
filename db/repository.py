@@ -5,6 +5,7 @@ All functions fail gracefully if the database is unavailable, returning fallback
 """
 
 from database.db import (
+    get_ai4i_dataset_stats,
     get_database_stats,
     get_db_stats,
     get_recent_diagnoses,
@@ -30,4 +31,5 @@ __all__ = [
     "prune_old_telemetry",
     "get_database_stats",
     "get_db_stats",
+    "get_ai4i_dataset_stats",
 ]

@@ -95,3 +95,25 @@ BEGIN
     RETURN prune_old_sensor_readings(retention_days);
 END;
 $$ LANGUAGE plpgsql;
+
+-- 5. UCI AI4I 2020 Predictive Maintenance Dataset Table
+CREATE TABLE IF NOT EXISTS ai4i2020_dataset (
+    udi INT PRIMARY KEY,
+    product_id VARCHAR(32) NOT NULL,
+    type VARCHAR(8) NOT NULL,
+    air_temperature_k NUMERIC(8, 2) NOT NULL,
+    process_temperature_k NUMERIC(8, 2) NOT NULL,
+    rotational_speed_rpm INT NOT NULL,
+    torque_nm NUMERIC(8, 2) NOT NULL,
+    tool_wear_min INT NOT NULL,
+    machine_failure INT NOT NULL,
+    twf INT NOT NULL,
+    hdf INT NOT NULL,
+    pwf INT NOT NULL,
+    osf INT NOT NULL,
+    rnf INT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_ai4i_machine_failure ON ai4i2020_dataset (machine_failure);
+CREATE INDEX IF NOT EXISTS idx_ai4i_product_id ON ai4i2020_dataset (product_id);

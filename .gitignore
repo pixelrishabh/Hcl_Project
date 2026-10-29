@@ -26,6 +26,7 @@ data/*.log
 data/*.jsonl
 data/*.csv
 !data/.gitkeep
+!data/ai4i2020.csv
 
 # IDE, OS, and temporary files
 .vscode/
