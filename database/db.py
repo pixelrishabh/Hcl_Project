@@ -34,13 +34,13 @@ logger = logging.getLogger("DatabaseManager")
 # Select PostgreSQL driver: psycopg (v3) or psycopg2
 _DRIVER_TYPE = None
 try:
-    import psycopg
-    from psycopg.rows import dict_row
+    import psycopg  # type: ignore
+    from psycopg.rows import dict_row  # type: ignore
     _DRIVER_TYPE = "psycopg"
 except ImportError:
     try:
-        import psycopg2
-        import psycopg2.extras
+        import psycopg2  # type: ignore
+        import psycopg2.extras  # type: ignore
         _DRIVER_TYPE = "psycopg2"
     except ImportError:
         _DRIVER_TYPE = None
